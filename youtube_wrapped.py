@@ -13,6 +13,7 @@ def load_youtube_watch_history(data):
     df = pd.read_json(data)
     df['timestamp'] = pd.to_datetime(df['time'], errors='coerce')
     df['video_title'] = df['title'].astype(str)
+    df['video_title'] = df['video_title'].str.extract(r'Watched(.*)')
     df['channel'] = df['subtitles'].apply(lambda x: x[0]['name'] if isinstance(x, list) and 'name' in x[0] else None)
     df['url'] = df['titleUrl']
     df=df[df.details.isna()]
@@ -238,26 +239,26 @@ def plot_search_temporal_patterns_interactive(df):
 
 # --- Streamlit APP ---
 
-st.set_page_config(page_title="🎬 YouTube Wrapped Fun Dashboard", layout="wide", page_icon="📺")
+st.set_page_config(page_title="YouTube Wrapped Dashboard", layout="wide", page_icon="📺")
 
-st.title("📊 Your Fun & Interactive YouTube Wrapped Dashboard")
-
-st.sidebar.header("📁 Upload Your Files")
-uploaded_file_watch = st.sidebar.file_uploader("Upload your `watch-history.json`", type="json")
-uploaded_file_search = st.sidebar.file_uploader("Upload your `search-history.json`", type="json")
+st.title("📊 YouTube Wrapped Dashboard")
 
 # Add a fun emoji mood selector for user engagement
 st.sidebar.header("Your YouTube Mood Today")
 mood = st.sidebar.selectbox("How do you feel about your YouTube watching habits?", 
                             options=["🎉 Loving it!", "🤔 Could be better", "😴 Too much binge", "🚀 On fire!", "😱 OMG!"])
 
+st.sidebar.header("📁 Upload Your Files")
+uploaded_file_watch = st.sidebar.file_uploader("Upload your `watch-history.json`", type="json")
+uploaded_file_search = st.sidebar.file_uploader("Upload your `search-history.json`", type="json")
+
 if uploaded_file_watch:
     watch_df = load_youtube_watch_history(uploaded_file_watch)
     watch_df['year'] = watch_df['timestamp'].dt.year
     min_year, max_year = int(watch_df['year'].min()), int(watch_df['year'].max())
 
-    with st.sidebar.expander("🔍 Filters"):
-        year_range = st.slider("Select Year Range", min_year, max_year, (min_year, max_year), 1)
+    # with st.sidebar.expander("🔍 Filters"):
+    year_range = st.sidebar.slider("Select Year Range", min_year, max_year, (min_year, max_year), 1)
         # video_tabs = st.tabs(["📺 All Videos", "⏱️ Shorts", "🎬 Long Videos"])
     video_type_filter = st.sidebar.radio(
         "🎞️ Select Video Type",
@@ -289,7 +290,7 @@ if uploaded_file_watch:
     col5.metric("📺 Videos", f"{unique_videos}", "👍")
 
     # Totals with animated progress bars
-    st.subheader("⏱️ Total Hours by Video Type")
+    st.subheader("Total Hours by Video Type")
     total_short = totals_short = df[df['video_type'] == 'Short']['watch_time_hours'].sum()
     total_long = totals_long = df[df['video_type'] == 'Long']['watch_time_hours'].sum()
     total_all = total_short + total_long
@@ -311,13 +312,13 @@ if uploaded_file_watch:
         daily_watch = df.groupby(['date', 'video_type'])['watch_time_hours'].sum().unstack(fill_value=0)
         plot_watch_time_interactive(daily_watch)
 
-    with st.expander("📆 Top Channels Watched"):
+    with st.expander("Top Channels Watched"):
         plot_top_channels_interactive(df)
 
-    with st.expander("📆 Daily Usage Trend"):
+    with st.expander("Daily Usage Trend"):
         plot_youtube_usage_trend_interactive(df)
 
-    with st.expander("📆 Most Watched Videos"):
+    with st.expander("Most Watched Videos"):
         plot_most_watched_video_interactive(df)
 
     # More stats and fun facts
@@ -340,12 +341,12 @@ if uploaded_file_watch:
 
 if uploaded_file_search:
     search_df = load_youtube_search_history(uploaded_file_search)
-    # with st.expander("📆 Top 20 Searches"):
+    # with st.expander("Top 20 Searches"):
     #     plot_top_youtube_queries_interactive(search_df)
 
-    with st.expander("📆 Temporal Search Pattern"):
+    with st.expander("Temporal Search Pattern"):
         plot_search_temporal_patterns_interactive(search_df)
 
 if uploaded_file_search and uploaded_file_watch:
-    with st.expander("📆 Search vs Watch Pattern"):
+    with st.expander("Search vs Watch Pattern"):
         compare_search_watch_trends_interactive(search_df, df)
