@@ -1,2 +1,4 @@
 /.conda
 /.vscode
+/__pycache__
+/Handler/__pycache__
